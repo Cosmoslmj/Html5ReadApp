@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html ng-app="app">
+	<head>
+		<meta charset="utf-8">
+		<!-- 设置可视区域 -->
+		<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,minimal-ui">
+		<!-- 格式识别 -->
+		<meta name="format-detection" content="telephone=no">
+		<!-- 重置样式 -->
+		<link rel="stylesheet" href="css/reset.css">
+		<title>阅读器</title>
+		<style type="text/css">
+			/*防止内容横向溢出 纵向滚动*/
+			html {
+				width: 100%;
+				height: 100%;
+				overflow-x: hidden;
+			}
+			body {
+				text-align: left;
+				width: 100%;
+				overflow: hidden;
+				background: #e9dfc7;
+			}
+			.m-read-content {
+				font-size: 14px;
+				color: #555;
+				line-height: 31px;
+				padding: 15px;
+			}
+			.m-read-title {
+				font-size: 20px;
+				color: #736357;
+				border-bottom: 1px solid #736357;
+				letter-spacing: 2px;/*字间距*/
+				margin: 0 0 1em 0;
+			}
+			.m-read-content p {
+				text-indent: 2em;  /*头部缩进*/
+				margin: 0.5em 0;
+				letter-spacing: 0px;
+				line-height: 24px;
+			}
+			.m-button-bar {
+				width: 70%;
+				max-width: 800px;
+				padding: 5px;		
+				margin: 0 auto;
+				margin-bottom: 30px;
+			}
+			.u-tab {
+				height: 34px;
+				margin: 10px auto;
+				line-height: 34px;
+				border-radius: 8px;
+				border: 1px solid #858382;
+				font-size: 12px;
+				background: #000;  /*black颜色来源设计图*/
+				opacity: 0.9;
+			}
+			.u-tab li {
+        display: inline-block;
+        width: 49%;
+        text-align: center;
+        color: #fff;
+			}
+			.u-tab li:nth-child(1) {
+        border-right: 1px solid #858382;
+			}
+			.top-nav {
+				position: fixed;
+				top:0;
+				height: 50px;
+				width: 100%;
+				z-index: 999;
+				background: #000;
+			}
+			.icon-back {
+				position: absolute; /*根据.top-nav定位*/
+				top: 14px;
+				left: 10px;
+				width: 23px;
+				height: 23px;
+				background: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAFAAAABQCAYAAACOEfKtAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAyNpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuNS1jMDE0IDc5LjE1MTQ4MSwgMjAxMy8wMy8xMy0xMjowOToxNSAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvIiB4bWxuczp4bXBNTT0iaHR0cDovL25zLmFkb2JlLmNvbS94YXAvMS4wL21tLyIgeG1sbnM6c3RSZWY9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9zVHlwZS9SZXNvdXJjZVJlZiMiIHhtcDpDcmVhdG9yVG9vbD0iQWRvYmUgUGhvdG9zaG9wIENDIChNYWNpbnRvc2gpIiB4bXBNTTpJbnN0YW5jZUlEPSJ4bXAuaWlkOkJGMkEyQkQxMjdBNDExRTU4NjA2QTJDMjFDQ0I0ODhEIiB4bXBNTTpEb2N1bWVudElEPSJ4bXAuZGlkOkJGMkEyQkQyMjdBNDExRTU4NjA2QTJDMjFDQ0I0ODhEIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6QkYyQTJCQ0YyN0E0MTFFNTg2MDZBMkMyMUNDQjQ4OEQiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6QkYyQTJCRDAyN0E0MTFFNTg2MDZBMkMyMUNDQjQ4OEQiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4Ia560AAAHWklEQVR42uyd7W9U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
+          );
+				background-size: contain; /*自适应容器宽度高度，必须在图片引入后*/
+			}
+			.nav-title {
+         position: absolute;  /*精确位置*/
+         top: 16px;
+         left: 42px;
+         color: #d5d5d6;
+			}
+			.bottom-nav {
+				position: fixed;
+				bottom: 0;
+				height: 70px;
+				width: 100%;
+				z-index: 10002;
+				background: #000;
+				display: flex;
+			}
+			.bottom-nav-bg {
+				opacity: .9;
+				z-index: 10001;
+			}
+			.bottom-set, .bottom-font, .bottom-moon {
+        flex: 1;
+        line-height: 90px;
+        text-align: center;
+        position: relative;
+        z-index: 10002;
+			}
+			.set-icon {
+        position: absolute; /*根据.top-nav定位*/
+        left: 50px;
+        top: 10px;
+				width: 23px;
+				height: 23px;
+				background: url(images/set.png) no-repeat;
+				background-size: contain;
+			}
+			.font-icon {
+        position: absolute; /*根据.top-nav定位*/
+        left: 50px;
+        top: 10px;
+				width: 23px;
+				height: 23px;
+				background: url(images/font-act.png) no-repeat;
+				background-size: contain;
+			}
+			.moon-icon {
+        position: absolute; /*根据.top-nav定位*/
+        left: 50px;
+        top: 10px;
+				width: 23px;
+				height: 23px;
+				background: url(images/moon.png) no-repeat;
+				background-size: contain;
+			}
+			.bottom-nav span {
+				color: #d5d5d6;
+			}
+			.nav-pannel-bg {
+				position: fixed;
+				bottom: 70px;
+				height: 135px;
+				width: 100%;
+				background: #000;
+				opacity: .9;
+				z-index: 10000;
+			}
+			.nav-pannel {
+        position: fixed;
+        bottom: 70px;
+        height: 135px;
+        width: 100%；
+        background: none;
+        color: #fff;
+        z-index: 10001;
+			}
+			.child-mod {
+				padding: 5px 10px;
+				margin: 15px;
+			}
+			.child-mod span {
+				display: inline-block;
+				padding-right: 20px;
+				padding-left: 10px;
+			}
+			.font-size-button {
+				background: none;
+				border: 1px solid #8c8c8c;
+				color: #fff;
+				border-radius: 16px;
+				padding: 5px 40px;
+			}
+			.child-mod button:nth-child(2) {
+				margin-right: 10px;
+			}
+			.bg-container {
+				position: relative;
+				width: 30px;
+				height: 30px;
+				border-radius: 15px;
+				background: #fff;
+				display: inline-block;
+				vertical-align: -14px;
+				margin-right: 4px;
+			}
+			.bg-container-current {
+				position: absolute;
+				top: -2px;
+				left: -2px;
+				width: 32px;
+				height: 32px;
+				border-radius: 16px;
+				border: 1px solid #ff7800;
+				display: inline-block;
+			}
+			.bg-container-blue {
+				position: absolute;
+				top: -2px;
+				left: -2px;
+				width: 32px;
+				height: 32px;
+				border-radius: 16px;
+				border: 1px solid #000;
+				display: inline-block;
+				background-color: #BBFFFF;
+			}
+			.artical-action-mid {
+				position: fixed;
+				z-index: 10002;
+				width: 100%;
+				height: 40%;
+				top: 30%;
+			}
+		</style>
+	</head>
+	<body>
+		<div id="root" class="container">
+		<!-- 脱离文档流 -->
+		<!-- 点击某个区域，唤起上下边栏 -->
+		  <div class="m-artical-action">
+		  	<div class="artical-action-mid" id="action_mid"></div>
+		  </div>
+
+		  <div class="top-nav" id="top_nav" style="display: none;">
+		  	<div class="icon-back"></div>
+		  	<div class="nav-title">返回书架</div>
+		  </div>
+			<div id="fition_chapter_title"></div>
+			<div id="fition_content" class="m-read-content">
+				  <h4 class="m-read-title"> 传媒王子唐小舟 </h4>
+			  	<p>
+			  		讲述传媒王子唐小舟，在报社受到总编辑的无情打压，在家里，老婆谷瑞丹红杏出墙。自认为可以和美女记者徐雅宫发展一场轰轰烈烈的暧昧情事，却被委婉拒绝。正当人生处于低谷时，省委办公厅一纸调令，调他担任新任省委书记赵德良的秘书，命运曲线迅速触底反弹，总编辑的谄媚，谷瑞丹的温驯，徐雅宫的柔情，接踵而至……然而，只有唐小舟自己能体会人在官场的那种如履薄冰的感觉。一幅全景式官场画卷，在他的生命中展现，而他以特殊的视角，发现官场之上，每一件小事，都闪射着政治智慧的光芒。作者通过一个个鲜活的故事，向读者讲述的不仅仅是官场的游戏规则，也阐述了“适者生存”的人生哲理。
+			  	</p>
+			  	<p>
+			  		讲述传媒王子唐小舟，在报社受到总编辑的无情打压，在家里，老婆谷瑞丹红杏出墙。自认为可以和美女记者徐雅宫发展一场轰轰烈烈的暧昧情事，却被委婉拒绝。正当人生处于低谷时，省委办公厅一纸调令，调他担任新任省委书记赵德良的秘书，命运曲线迅速触底反弹，总编辑的谄媚，谷瑞丹的温驯，徐雅宫的柔情，接踵而至……
+			  	</p>
+			  	<p>
+			  		讲述传媒王子唐小舟，在报社受到总编辑的无情打压，在家里，老婆谷瑞丹红杏出墙。自认为可以和美女记者徐雅宫发展一场轰轰烈烈的暧昧情事，却被委婉拒绝。
+			  	</p>
+			  	<p>
+			  		讲述传媒王子唐小舟，在报社受到总编辑的无情打压，在家里，老婆谷瑞丹红杏出墙。自认为可以和美女记者徐雅宫发展一场轰轰烈烈的暧昧情事，却被委婉拒绝。正当人生处于低谷时，省委办公厅一纸调令，调他担任新任省委书记赵德良的秘书，命运曲线迅速触底反弹，总编辑的谄媚，谷瑞丹的温驯，徐雅宫的柔情，接踵而至……然而，只有唐小舟自己能体会人在官场的那种如履薄冰的感觉。一幅全景式官场画卷，在他的生命中展现，而他以特殊的视角，发现官场之上，每一件小事，都闪射着政治智慧的光芒。作者通过一个个鲜活的故事，向读者讲述的不仅仅是官场的游戏规则，也阐述了“适者生存”的人生哲理。
+			  		讲述传媒王子唐小舟，在报社受到总编辑的无情打压，在家里，老婆谷瑞丹红杏出墙。自认为可以和美女记者徐雅宫发展一场轰轰烈烈的暧昧情事，却被委婉拒绝。
+			  	</p>
+			</div>
+			<div class="m-button-bar">
+				<ul class="u-tab">
+					<li id="prev_button">上一章</li>
+					<li id="next_button">下一章</li>
+				</ul>
+			</div>
+			<div class="nav-pannel" id="font-container" style="display: none;">
+				<div class="child-mod">
+					<span>字号</span>
+					<button id="large_font" class="font-size-button">大</button>
+					<button id="small_font" class="font-size-button">小</button>
+				</div>
+				<div class="child-mod">
+					<span>背景</span>
+					<div class="bg-container">
+						<div class="bg-container-current"></div>
+					</div>
+					<div class="bg-container">
+						<div class="bg-container-blue"></div>
+					</div>
+				</div>
+			</div>
+			<div class="nav-pannel-bg" style="display: none;"></div>
+			<div class="bottom-nav-bg bottom-nav" id="bottom_nav_bg" style="display: none;"></div>
+			<div class="bottom-nav" id="bottom_nav" style="display: none;">
+				<div class="bottom-set">
+				  <div class="set-icon"></div>
+				  <span>目录</span>
+				</div>
+				<div class="bottom-font">
+				  <div class="font-icon"></div>
+				  <span>字体</span>
+				</div>
+				<div class="bottom-moon">
+				  <div class="moon-icon"></div>
+				  <span>夜间</span>
+				</div>
+			</div>
+		</div>
+		<!-- zepto库更适合移动端开发轻量，性能更好 -->
+		<script src="lib/zepto.min.js"></script>
+		<script>
+			window.jQuery = $;
+		</script>
+		<!-- 数据解码功能 -->
+		<script src="js/jquery.base64.js"></script>
+		<!-- 跨域 -->
+		<script src="js/jquery.jsonp.js"></script>
+
+    <!-- 交互逻辑 -->
+    <!-- 数据存储、事件绑定、方法封装 -->
+		<script>
+		// html存储，完成方法调用的时候进行测试
+			(function() {
+        var Util = (function() {
+        	// localStorage 在同一个域名下共享 key value形式 防止混乱操作localStorage，进行封装
+        	var prefix = 'html5_reader_';
+          var StorageGetter = function(key) {
+            return localStorage.getItem(prefix + key);
+          }
+          var StorageSetter = function(key,val) {
+            return localStorage.getItem(prefix + key, val);
+          }
+          return {
+          	StorageGetter:StorageGetter,
+          	StorageSetter:StorageSetter
+          }
+        })();
+
+        var Dom = {
+        	top_nav :$('#top_nav'),
+        	bottom_nav :$('#bottom_nav'),
+        	bottom_nav_bg:$('#bottom_nav_bg')
+        };
+        var Win = $(window);
+        var Doc = $(document);
+
+
+        function main() {
+        	// todo 整个项目的入口函数
+          EventHanlder();
+        }
+
+        function ReaderModel () {
+           // todo 实现和阅读器相关的数据交互的方法 （ajax请求 jsonp...）
+        }
+
+        function ReaderBaseFram() {
+        	// todo 界面的初始化 渲染基本的UI结构
+        }
+
+        function EventHanlder() {
+        	// todo 控制层 交互的事件绑定
+        	// touch
+        	// zepto tap 
+        	// 在 安卓4.0之前 用click会有300毫秒延迟。之后的版本不会有这个情况
+        	// 用tap事件不能用浏览器测试。所以用click
+
+        	//点击某块区域显示
+        	$('#action_mid').click(function() {
+            if (Dom.top_nav.css('display') === 'none') {
+                Dom.bottom_nav.show();
+                Dom.bottom_nav_bg.show();
+                Dom.top_nav.show();
+            } else {
+                Dom.bottom_nav.hide();
+                Dom.bottom_nav_bg.hide();
+                Dom.top_nav.hide();
+            }
+        	});
+        	//滚动的时候隐藏
+        	Win.scroll(function() {
+        		Dom.bottom_nav.hide();
+            Dom.bottom_nav_bg.hide();
+            Dom.top_nav.hide();
+        	})
+        
+        }
+            
+          // 调用入口函数  
+         main();
+       })();
+              
+		</script>
+	</body>
+</html>
