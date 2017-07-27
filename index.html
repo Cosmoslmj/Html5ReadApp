@@ -104,7 +104,7 @@
 				opacity: .9;
 				z-index: 10001;
 			}
-			.bottom-set, .bottom-font, .bottom-moon {
+			.bottom-set, .bottom-font, .bottom-change-status {
         flex: 1;
         line-height: 90px;
         text-align: center;
@@ -230,8 +230,8 @@
 		  	<div class="icon-back"></div>
 		  	<div class="nav-title">返回书架</div>
 		  </div>
-			<div id="fition_chapter_title"></div>
-			<div id="fition_content" class="m-read-content">
+			<div id="fiction_chapter_title"></div>
+			<div id="fiction_content" class="m-read-content">
 				  <h4 class="m-read-title"> 传媒王子唐小舟 </h4>
 			  	<p>
 			  		讲述传媒王子唐小舟，在报社受到总编辑的无情打压，在家里，老婆谷瑞丹红杏出墙。自认为可以和美女记者徐雅宫发展一场轰轰烈烈的暧昧情事，却被委婉拒绝。正当人生处于低谷时，省委办公厅一纸调令，调他担任新任省委书记赵德良的秘书，命运曲线迅速触底反弹，总编辑的谄媚，谷瑞丹的温驯，徐雅宫的柔情，接踵而至……然而，只有唐小舟自己能体会人在官场的那种如履薄冰的感觉。一幅全景式官场画卷，在他的生命中展现，而他以特殊的视角，发现官场之上，每一件小事，都闪射着政治智慧的光芒。作者通过一个个鲜活的故事，向读者讲述的不仅仅是官场的游戏规则，也阐述了“适者生存”的人生哲理。
@@ -253,7 +253,8 @@
 					<li id="next_button">下一章</li>
 				</ul>
 			</div>
-			<div class="nav-pannel" id="font-container" style="display: none;">
+			<div class="font-container nav-pannel-bg" style="display: none;"></div>
+			<div class="nav-pannel" id="font_container" style="display: none;">
 				<div class="child-mod">
 					<span>字号</span>
 					<button id="large_font" class="font-size-button">大</button>
@@ -268,22 +269,28 @@
 						<div class="bg-container-blue"></div>
 					</div>
 				</div>
-			</div>
-			<div class="nav-pannel-bg" style="display: none;"></div>
+			</div>			
 			<div class="bottom-nav-bg bottom-nav" id="bottom_nav_bg" style="display: none;"></div>
 			<div class="bottom-nav" id="bottom_nav" style="display: none;">
-				<div class="bottom-set">
+				<div class="bottom-set" id="set_button">
 				  <div class="set-icon"></div>
 				  <span>目录</span>
 				</div>
-				<div class="bottom-font">
+				<div class="bottom-font" id="font_button">
 				  <div class="font-icon"></div>
 				  <span>字体</span>
 				</div>
-				<div class="bottom-moon">
-				  <div class="moon-icon"></div>
-				  <span>夜间</span>
+				<div id="night_button" class="bottom-change-status">
+					<div class="bottom-moon" id="night_icon">
+				    <div class="moon-icon"></div>
+				    <span>夜间</span>
+				  </div>
+				  <div class="bottom-moon" style="display: none;" id="day_icon">
+				    <div class="moon-icon"></div>
+				    <span>白天</span>
+				  </div>
 				</div>
+				
 			</div>
 		</div>
 		<!-- zepto库更适合移动端开发轻量，性能更好 -->
@@ -307,23 +314,37 @@
           var StorageGetter = function(key) {
             return localStorage.getItem(prefix + key);
           }
-          var StorageSetter = function(key,val) {
-            return localStorage.getItem(prefix + key, val);
+          var StorageSetter = function(key, val) {
+            return localStorage.setItem(prefix + key, val);
           }
           return {
-          	StorageGetter:StorageGetter,
-          	StorageSetter:StorageSetter
+          	StorageGetter: StorageGetter,
+          	StorageSetter: StorageSetter
           }
         })();
 
         var Dom = {
         	top_nav :$('#top_nav'),
         	bottom_nav :$('#bottom_nav'),
-        	bottom_nav_bg:$('#bottom_nav_bg')
+        	bottom_nav_bg:$('#bottom_nav_bg'),
+        	night_day_switch_button:$('#night_button'),
+        	font_container:$('#font_container'),
+        	font_container_bg:$('.font-container'),
+        	font_button:$('#font_button')
         };
         var Win = $(window);
         var Doc = $(document);
-
+        var RootContainer = $('#fiction_content');
+        var initFontSize = Util.StorageGetter('font_size');
+        
+        // 转为字符串
+        initFontSize = parseInt(initFontSize);
+        //判断是否存在存储的字号
+        if (!initFontSize) {
+        	initFontSize = 14;
+        }
+        RootContainer.css('font-size', initFontSize);
+       
 
         function main() {
         	// todo 整个项目的入口函数
@@ -355,13 +376,57 @@
                 Dom.bottom_nav.hide();
                 Dom.bottom_nav_bg.hide();
                 Dom.top_nav.hide();
+                Dom.font_container.hide();
+             	  Dom.font_container_bg.hide();
+                Dom.font_button.removeClass('current');
             }
         	});
+
+        	$('#night_day_switch_button').click(function() {
+            // todo 触发背景颜色切换事件
+        	});
+          
+          //字号方法缩小设置
+          $('#large_font').click(function() {
+          	 if (initFontSize >= 20) {
+          	 	alert('当前字体20')
+          	 	  return;
+          	 }
+             initFontSize += 1;
+             RootContainer.css('font-size', initFontSize);
+             Util.StorageSetter('font_size', initFontSize);
+             console.log(initFontSize);
+          });
+
+          $('#small_font').click(function() {
+          	 if (initFontSize <= 12) {
+          		  alert('当前字体12')
+          	 	  return;
+          	 }
+          	 initFontSize -= 1;
+          	 RootContainer.css('font-size', initFontSize);
+          	 Util.StorageSetter('font_size', initFontSize);
+          });
+
+          Dom.font_button.click(function() {
+             if (Dom.font_container.css('display') === 'none') {
+             	  Dom.font_container.show();
+             	  Dom.font_container_bg.show();
+             	  Dom.font_button.addClass('current');
+             } else {
+             	  Dom.font_container.hide();
+             	  Dom.font_container_bg.hide();
+             	  Dom.font_button.removeClass('current');
+             }
+        	})
+
         	//滚动的时候隐藏
         	Win.scroll(function() {
         		Dom.bottom_nav.hide();
             Dom.bottom_nav_bg.hide();
             Dom.top_nav.hide();
+            Dom.font_container.hide();
+            Dom.font_container_bg.hide();
         	})
         
         }
