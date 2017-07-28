@@ -23,10 +23,14 @@
 				background: #e9dfc7;
 			}
 			.m-read-content {
+				min-height: 300px;
+				max-width: 900px;
+				margin: 0 auto;
 				font-size: 14px;
 				color: #555;
 				line-height: 31px;
 				padding: 15px;
+				letter-spacing: 2px;
 			}
 			.m-read-title {
 				font-size: 20px;
@@ -38,7 +42,7 @@
 			.m-read-content p {
 				text-indent: 2em;  /*头部缩进*/
 				margin: 0.5em 0;
-				letter-spacing: 0px;
+				/*letter-spacing: 0px;*/
 				line-height: 24px;
 			}
 			.m-button-bar {
@@ -198,6 +202,14 @@
 				border: 1px solid #ff7800;
 				display: inline-block;
 			}
+			.bg-container span{
+				position: relative;
+				width: 40px;
+				top: 32px;
+				left: -8px;
+				display: block;
+        font-size: 12px;
+			}
 			.bg-container-blue {
 				position: absolute;
 				top: -2px;
@@ -208,6 +220,39 @@
 				border: 1px solid #000;
 				display: inline-block;
 				background-color: #BBFFFF;
+			}
+			.bg-container-hui {
+				position: absolute;
+				top: -2px;
+				left: -2px;
+				width: 32px;
+				height: 32px;
+				border-radius: 16px;
+				border: 1px solid #000;
+				display: inline-block;
+				background-color: #a4a4a4;
+			}
+			.bg-container-pre {
+				position: absolute;
+				top: -2px;
+				left: -2px;
+				width: 32px;
+				height: 32px;
+				border-radius: 16px;
+				border: 1px solid #000;
+				display: inline-block;
+				background-color: #cdefce;
+			}
+			.bg-container-night {
+				position: absolute;
+				top: -2px;
+				left: -2px;
+				width: 32px;
+				height: 32px;
+				border-radius: 16px;
+				border: 1px solid #000;
+				display: inline-block;
+				background-color: #0f1410;
 			}
 			.artical-action-mid {
 				position: fixed;
@@ -228,7 +273,7 @@
 
 		  <div class="top-nav" id="top_nav" style="display: none;">
 		  	<div class="icon-back"></div>
-		  	<div class="nav-title">返回书架</div>
+		  	<div class="nav-title" id="nav_title">返回书架</div>
 		  </div>
 			<div id="fiction_chapter_title"></div>
 			<div id="fiction_content" class="m-read-content">
@@ -247,7 +292,7 @@
 			  		讲述传媒王子唐小舟，在报社受到总编辑的无情打压，在家里，老婆谷瑞丹红杏出墙。自认为可以和美女记者徐雅宫发展一场轰轰烈烈的暧昧情事，却被委婉拒绝。
 			  	</p>
 			</div>
-			<div class="m-button-bar">
+			<div class="m-button-bar" id="bottom_tool_bar_ul">
 				<ul class="u-tab">
 					<li id="prev_button">上一章</li>
 					<li id="next_button">下一章</li>
@@ -260,13 +305,22 @@
 					<button id="large_font" class="font-size-button">大</button>
 					<button id="small_font" class="font-size-button">小</button>
 				</div>
-				<div class="child-mod">
+				<div class="child-mod" id="bg-container">
 					<span>背景</span>
 					<div class="bg-container">
 						<div class="bg-container-current"></div>
 					</div>
 					<div class="bg-container">
 						<div class="bg-container-blue"></div>
+					</div>
+					<div class="bg-container">
+						<div class="bg-container-hui"></div>
+					</div>
+					<div class="bg-container">
+						<div class="bg-container-pre"></div>
+					</div>
+					<div class="bg-container">
+						<div class="bg-container-night"></div>
 					</div>
 				</div>
 			</div>			
@@ -308,6 +362,8 @@
 		<script>
 		// html存储，完成方法调用的时候进行测试
 			(function() {
+				//先声明严格模式，才可以用es6方法
+				'use strict';
         var Util = (function() {
         	// localStorage 在同一个域名下共享 key value形式 防止混乱操作localStorage，进行封装
         	var prefix = 'html5_reader_';
@@ -317,7 +373,26 @@
           var StorageSetter = function(key, val) {
             return localStorage.setItem(prefix + key, val);
           }
+          var getBSONP = function(url, callback) {
+            // 调用插件封装的方法
+          	return $.jsonp({
+          		url: url,
+          		// 是否返回
+          		cache: true,
+          		// 请求回来是个方法
+          		callback: 'doukan_fiction_chapter',
+          		success: function (result) {
+          			// 用插件解码
+          			// debugger;
+                var data = $.base64.decode(result);
+                // json数据  原生带的方法
+                var json = decodeURIComponent(escape(data));
+                callback(json);
+          		}
+          	});
+          };
           return {
+          	getBSONP: getBSONP,
           	StorageGetter: StorageGetter,
           	StorageSetter: StorageSetter
           }
@@ -330,33 +405,69 @@
         	night_day_switch_button:$('#night_button'),
         	font_container:$('#font_container'),
         	font_container_bg:$('.font-container'),
-        	font_button:$('#font_button')
+        	font_button:$('#font_button'),
+        	bottom_toor_bar:$('#bottom_toor_bar'),
+        	nav_title: $('#nav_title'),
+        	bg_container:$('#bg_container')
         };
+
         var Win = $(window);
         var Doc = $(document);
+        var readerModel;
+        var readerUI;
         var RootContainer = $('#fiction_content');
         var initFontSize = Util.StorageGetter('font_size');
+        var NightMode = false;
+        // var initLetterSpacing = Util.StorageGetter('letter_Spacing')
         
         // 转为字符串
         initFontSize = parseInt(initFontSize);
+        // initLetterSpacing = parseInt(initLetterSpacing);
         //判断是否存在存储的字号
         if (!initFontSize) {
         	initFontSize = 14;
         }
+        // if (!initLetterSpacing) {
+        // 	initLetterSpacing = 2;
+        // }
         RootContainer.css('font-size', initFontSize);
-       
-
+        // RootContainer.css('letter-spacing', initLetterSpacing)     
         function main() {
-        	// todo 整个项目的入口函数
+        	// todo 整个项目的入口函数         
+          readerModel = ReaderModel();
+          readerUI = ReaderBaseFram(RootContainer);
+          readerModel.init(function (data) {
+             readerUI(data);
+          });
           EventHanlder();
         }
 
         function ReaderModel () {
            // todo 实现和阅读器相关的数据交互的方法 （ajax请求 jsonp...）
+           // 局部全局变量开头一般大写
+           var Chapter_id;
+           var ChapterTotal;
+           // 初始化函数
+           var init = function(callback) {
+           }
+           return {
+           	init : init
+           }
         }
 
-        function ReaderBaseFram() {
+        function ReaderBaseFram(container) {
         	// todo 界面的初始化 渲染基本的UI结构
+        	function parseChapterData (jsonData) {
+        		var jsonObj = JSON.parse(jsonData);
+        		var html = '<h4>' + jsonObj.t + '</h4>';
+        		for (var i = 0; i < jsonObj.p.length; i++) {
+        			html += '<p>' + jsonObj.p[i] + '</p>';
+        		}
+        		return html;
+        	}
+        	return function (data) {
+        		container.html(parseChapterData(data));
+        	}
         }
 
         function EventHanlder() {
@@ -382,8 +493,19 @@
             }
         	});
 
-        	$('#night_day_switch_button').click(function() {
+        	Dom.night_day_switch_button.click(function() {
             // todo 触发背景颜色切换事件
+            if (NightMode) {
+								$('#day_icon').hide();
+								$('#night_icon').show();
+								$('#font_normal').trigger('click');
+								NightMode = false;
+							} else {
+								$('#day_icon').show();
+								$('#night_icon').hide();
+								$('#font_night').trigger('click');
+								NightMode = true;
+							}
         	});
           
           //字号方法缩小设置
@@ -391,21 +513,22 @@
           	 if (initFontSize >= 20) {
           	 	alert('当前字体20')
           	 	  return;
-          	 }
-             initFontSize += 1;
+          	 } 
+          	 	initFontSize += 1;                          
              RootContainer.css('font-size', initFontSize);
              Util.StorageSetter('font_size', initFontSize);
              console.log(initFontSize);
           });
-
+          
           $('#small_font').click(function() {
           	 if (initFontSize <= 12) {
           		  alert('当前字体12')
           	 	  return;
-          	 }
-          	 initFontSize -= 1;
+          	 } 
+               initFontSize -= 1; 
           	 RootContainer.css('font-size', initFontSize);
           	 Util.StorageSetter('font_size', initFontSize);
+          	 console.log(initFontSize);
           });
 
           Dom.font_button.click(function() {
@@ -428,6 +551,16 @@
             Dom.font_container.hide();
             Dom.font_container_bg.hide();
         	})
+
+        	// 绑定翻页事件
+        	$('#prev_button').click(function() {
+             //获得章节翻页的数据，再对数据进行渲染
+             alert('没有数据哈');
+        	});
+
+        	$('#next_button').click(function() {
+            alert('没有数据哈');
+        	});
         
         }
             
