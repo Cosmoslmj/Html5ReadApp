@@ -130,7 +130,7 @@
         top: 10px;
 				width: 23px;
 				height: 23px;
-				background: url(images/font-act.png) no-repeat;
+				background: url(images/font.png) no-repeat;
 				background-size: contain;
 			}
 			.moon-icon {
@@ -140,6 +140,15 @@
 				width: 23px;
 				height: 23px;
 				background: url(images/moon.png) no-repeat;
+				background-size: contain;
+			}
+			.day-icon {
+        position: absolute; /*根据.top-nav定位*/
+        left: 50px;
+        top: 10px;
+				width: 23px;
+				height: 23px;
+				background: url(images/day.png) no-repeat;
 				background-size: contain;
 			}
 			.bottom-nav span {
@@ -340,7 +349,7 @@
 				    <span>夜间</span>
 				  </div>
 				  <div class="bottom-moon" style="display: none;" id="day_icon">
-				    <div class="moon-icon"></div>
+				    <div class="day-icon"></div>
 				    <span>白天</span>
 				  </div>
 				</div>
@@ -373,26 +382,7 @@
           var StorageSetter = function(key, val) {
             return localStorage.setItem(prefix + key, val);
           }
-          var getBSONP = function(url, callback) {
-            // 调用插件封装的方法
-          	return $.jsonp({
-          		url: url,
-          		// 是否返回
-          		cache: true,
-          		// 请求回来是个方法
-          		callback: 'doukan_fiction_chapter',
-          		success: function (result) {
-          			// 用插件解码
-          			// debugger;
-                var data = $.base64.decode(result);
-                // json数据  原生带的方法
-                var json = decodeURIComponent(escape(data));
-                callback(json);
-          		}
-          	});
-          };
           return {
-          	getBSONP: getBSONP,
           	StorageGetter: StorageGetter,
           	StorageSetter: StorageSetter
           }
@@ -418,6 +408,7 @@
         var RootContainer = $('#fiction_content');
         var initFontSize = Util.StorageGetter('font_size');
         var NightMode = false;
+        var initBackgroundColor = Util.StorageGetter('pre_background_color')
         // var initLetterSpacing = Util.StorageGetter('letter_Spacing')
         
         // 转为字符串
@@ -427,10 +418,14 @@
         if (!initFontSize) {
         	initFontSize = 14;
         }
+        if (!initBackgroundColor) {
+        	initBackgroundColo = '#e9dfc7';
+        }
         // if (!initLetterSpacing) {
         // 	initLetterSpacing = 2;
         // }
-        RootContainer.css('font-size', initFontSize);
+        RootContainer.css('font-size', 'initFontSize');
+        $('body').css({"background-color": 'initBackgroundColor','color':'#fff'});
         // RootContainer.css('letter-spacing', initLetterSpacing)     
         function main() {
         	// todo 整个项目的入口函数         
@@ -457,17 +452,17 @@
 
         function ReaderBaseFram(container) {
         	// todo 界面的初始化 渲染基本的UI结构
-        	function parseChapterData (jsonData) {
-        		var jsonObj = JSON.parse(jsonData);
-        		var html = '<h4>' + jsonObj.t + '</h4>';
-        		for (var i = 0; i < jsonObj.p.length; i++) {
-        			html += '<p>' + jsonObj.p[i] + '</p>';
-        		}
-        		return html;
-        	}
-        	return function (data) {
-        		container.html(parseChapterData(data));
-        	}
+        	// function parseChapterData (jsonData) {
+        	// 	var jsonObj = JSON.parse(jsonData);
+        	// 	var html = '<h4>' + jsonObj.t + '</h4>';
+        	// 	for (var i = 0; i < jsonObj.p.length; i++) {
+        	// 		html += '<p>' + jsonObj.p[i] + '</p>';
+        	// 	}
+        	// 	return html;
+        	// }
+        	// return function (data) {
+        	// 	container.html(parseChapterData(data));
+        	// }
         }
 
         function EventHanlder() {
@@ -496,15 +491,31 @@
         	Dom.night_day_switch_button.click(function() {
             // todo 触发背景颜色切换事件
             if (NightMode) {
-								$('#day_icon').hide();
+            		$('#day_icon').hide();
 								$('#night_icon').show();
+								$('.moon-icon').css('background-image', 'url(images/moon-act.png)');
+								$('.font-icon').css('background-image', 'url(images/font.png)');
 								$('#font_normal').trigger('click');
+								$('body').css({"background-color": '#000','color':'#fff'});
+								// $('#top_nav').css({"background-color": '#e9dfc7','color':'#999'});
+								// $('#bottom_nav').css({"background-color": '#ccc','color':'#999'});
 								NightMode = false;
+                Util.StorageSetter('background-color', initBackgroundColor);
+                Util.StorageSetter(NightMode, false);
+                console.log(NightMode)
+                console.log(initBackgroundColor)
 							} else {
 								$('#day_icon').show();
 								$('#night_icon').hide();
+								$('.day-icon').css('background-image', 'url(images/day-act.png)');
+								$('.font-icon').css('background-image', 'url(images/font.png)');
 								$('#font_night').trigger('click');
+								$('body').css({"background-color": '#e9dfc7','color':'#fff'});
 								NightMode = true;
+								Util.StorageSetter(initBackgroundColor, "#e9dfc7");
+								Util.StorageSetter(NightMode, true)
+								console.log(NightMode);
+                console.log(initBackgroundColor);
 							}
         	});
           
@@ -535,6 +546,9 @@
              if (Dom.font_container.css('display') === 'none') {
              	  Dom.font_container.show();
              	  Dom.font_container_bg.show();
+             	  $('.font-icon').css('background-image', 'url(images/font-act.png)');
+             	  $('.moon-icon').css('background-image', 'url(images/moon.png)');
+             	  $('.day-icon').css('background-image', 'url(images/day.png)');
              	  Dom.font_button.addClass('current');
              } else {
              	  Dom.font_container.hide();
